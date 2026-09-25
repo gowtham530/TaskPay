@@ -1,4 +1,4 @@
-const CACHE_NAME = 'taskpay-v1.4';
+const CACHE_NAME = 'taskpay-v2.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate: clean old caches
+// Activate: clean old caches immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -23,27 +23,35 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: cache-first for static, network-first for API
+// Fetch: Network-First for HTML documents, Cache-First for static assets
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
+  // Network-First for HTML navigation so updates show instantly
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+        }
+        return response;
+      }).catch(() => {
+        return caches.match('./index.html') || caches.match('./');
+      })
+    );
+    return;
+  }
+
+  // Cache-First for other assets (icons, etc.)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
-
       return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
+        if (!response || response.status !== 200) return response;
         const responseClone = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseClone);
-        });
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         return response;
-      }).catch(() => {
-        if (event.request.destination === 'document') {
-          return caches.match('./index.html') || caches.match('./');
-        }
       });
     })
   );
