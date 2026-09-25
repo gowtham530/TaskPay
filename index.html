@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>TaskPay - Vendor Task & Payment Tracker</title>
+  
+  <!-- PWA & iOS Safari Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TaskPay" />
+  <meta name="theme-color" content="#0d0f17" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-primary: #0a0b10;
+      --bg-surface: #12141d;
+      --bg-surface-elevated: #1a1d2b;
+      --bg-card: rgba(26, 29, 43, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.35);
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --info: #06b6d4;
+      --info-bg: rgba(6, 182, 212, 0.12);
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+      --shadow-soft: 0 10px 30px -10px rgba(0,0,0,0.5);
+      --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --bg-card-border: rgba(0, 0, 0, 0.06);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --shadow-soft: 0 10px 25px -5px rgba(0,0,0,0.06);
+      --shadow-glow: 0 4px 15px rgba(99, 102, 241, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    input, textarea {
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+    }
+
+    /* iOS Glassmorphism */
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--bg-card-border);
+    }
+
+    /* PIN Lock Overlay Screen */
+    #pinLockScreen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-primary);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 30px);
+      backdrop-filter: blur(40px);
+    }
+
+    .pin-header {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .pin-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .pin-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .pin-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: transparent;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pin-dot.filled {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      transform: scale(1.15);
+    }
+
+    .pin-dot.error {
+      border-color: var(--danger);
+      background: var(--danger);
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .keypad-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid var(--bg-card-border);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 26px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.15s ease;
+    }
+
+    .keypad-btn:active {
+      transform: scale(0.92);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .keypad-btn.action-btn {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    /* Main Container & Top Navigation */
+    .app-header {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Views Framework */
+    .view {
+      display: none;
+      padding: 16px 20px;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Elements */
+    .card {
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Overall Summary Strip */
+    .stats-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      scrollbar-width: none;
+    }
+    .stats-scroll::-webkit-scrollbar { display: none; }
+
+    .stat-pill {
+      flex: 0 0 auto;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      min-width: 130px;
+    }
+
+    .stat-pill-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-pill-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Vendor Selection Carousel / Chips */
+    .vendor-chips-wrap {
+      margin-bottom: 22px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .section-link {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .vendor-chips {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 2px 0 8px 0;
+    }
+    .vendor-chips::-webkit-scrollbar { display: none; }
+
+    .vendor-chip {
+      flex: 0 0 auto;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1.5px solid var(--bg-card-border);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 145px;
+    }
+
+    .vendor-chip.active {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.12);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+    }
+
+    .vendor-chip-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chip-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px;
+    }
+
+    .chip-pin {
+      color: var(--warning);
+      font-size: 12px;
+    }
+
+    .chip-due {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chip-rate {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Selected Vendor Hero Card */
+    .vendor-hero-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      margin-bottom: 22px;
+      position: relative;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge-pending { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-paid { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-advance { background: var(--info-bg); color: var(--info); border: 1px solid rgba(6, 182, 212, 0.3); }
+
+    .hero-balance-wrap {
+      margin-bottom: 16px;
+    }
+
+    .hero-balance-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .hero-balance-amount {
+      font-size: 36px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      letter-spacing: -1px;
+    }
+
+    .hero-substats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: var(--bg-surface);
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--bg-card-border);
+    }
+
+    .hero-substat-item {
+      text-align: center;
+    }
+
+    .substat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .substat-val {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+    }
+
+    /* Quick Entry Form */
+    .quick-entry-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--bg-card-border);
+      padding: 22px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .entry-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Stepper for Tasks */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      background: var(--bg-primary);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .stepper-btn {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .stepper-btn:active {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    .stepper-input {
+      flex: 1;
+      text-align: center;
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    /* Currency Input */
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--bg-primary);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 0 16px;
+    }
+
+    .input-prefix {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 52px;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-input-text {
+      width: 100%;
+      height: 48px;
+      background: var(--bg-primary);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 0 16px;
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-input-text:focus, .input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    /* Live calculation preview pill */
+    .calc-preview {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px dashed rgba(99, 102, 241, 0.3);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+    }
+
+    .calc-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calc-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .calc-val {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+    }
+
+    /* Primary Save Button */
+    .btn-primary {
+      width: 100%;
+      height: 56px;
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow-glow);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      opacity: 0.92;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--safe-bottom) + 64px);
+      padding-bottom: var(--safe-bottom);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--bg-card-border);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-subtle);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 24px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* Modal / Sheet for Add Vendor / Details */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: flex-end;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      background: var(--bg-surface);
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+      border: 1px solid var(--bg-card-border);
+      padding: 24px 20px calc(var(--safe-bottom) + 24px);
+      max-height: 88vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    .modal-backdrop.open .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--text-subtle);
+      border-radius: var(--radius-full);
+      margin: 0 auto 18px;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .sheet-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    /* Vendors List View */
+    .vendor-item-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .vendor-item-card:active {
+      background: var(--bg-surface-elevated);
+    }
+
+    .vendor-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .vendor-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .vendor-details-str {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .vendor-finance {
+      text-align: right;
+    }
+
+    .vendor-due-str {
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Transaction History Rows */
+    .tx-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .tx-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tx-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .tx-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tx-icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-subtle);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .tx-icon-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tx-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tx-badge-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tx-pill {
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tx-pill.earned { color: var(--success); }
+    .tx-pill.paid { color: var(--danger); }
+
+    .tx-balance-after {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: right;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      top: calc(var(--safe-top) + 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(26, 29, 43, 0.95);
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Filter pills */
+    .filter-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 16px;
+    }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    /* Native-like search bar */
+    .search-input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 16px 0 42px;
+      background: var(--bg-surface);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 4-DIGIT PIN SECURITY LOCK SCREEN -->
+  <div id="pinLockScreen">
+    <div class="pin-header">
+      <div class="pin-icon-wrap">
+        <i data-lucide="shield-check" style="color: #fff; width: 32px; height: 32px;"></i>
+      </div>
+      <h2 class="pin-title" id="pinScreenTitle">Unlock TaskPay</h2>
+      <p class="pin-subtitle" id="pinScreenSubtitle">Enter your 4-digit security PIN</p>
+      
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+    </div>
+
+    <div class="keypad">
+      <button class="keypad-btn" onclick="handlePinDigit(1)">1</button>
+      <button class="keypad-btn" onclick="handlePinDigit(2)">2</button>
+      <button class="keypad-btn" onclick="handlePinDigit(3)">3</button>
+      <button class="keypad-btn" onclick="handlePinDigit(4)">4</button>
+      <button class="keypad-btn" onclick="handlePinDigit(5)">5</button>
+      <button class="keypad-btn" onclick="handlePinDigit(6)">6</button>
+      <button class="keypad-btn" onclick="handlePinDigit(7)">7</button>
+      <button class="keypad-btn" onclick="handlePinDigit(8)">8</button>
+      <button class="keypad-btn" onclick="handlePinDigit(9)">9</button>
+      <button class="keypad-btn action-btn" onclick="resetPinInput()">Clear</button>
+      <button class="keypad-btn" onclick="handlePinDigit(0)">0</button>
+      <button class="keypad-btn action-btn" onclick="deletePinDigit()">
+        <i data-lucide="delete" style="width: 22px; height: 22px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- APPLICATION HEADER -->
+  <header class="app-header glass">
+    <div>
+      <div class="brand-title">
+        <i data-lucide="wallet" style="width: 22px; height: 22px; color: var(--accent);"></i>
+        TaskPay
+      </div>
+      <div class="brand-subtitle" id="currentDateStr">Loading date...</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="lockApp()" title="Lock App">
+        <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+      </button>
+      <button class="icon-btn" onclick="switchTab('settings')" title="Settings">
+        <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container">
+    <div class="toast" id="appToast">
+      <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: var(--success);"></i>
+      <span id="toastMessage">Success</span>
+    </div>
+  </div>
+
+  <!-- VIEW 1: HOME (DASHBOARD & QUICK ENTRY) -->
+  <main class="view active" id="view-home">
+    
+    <!-- Overall Summary Horizontal Cards -->
+    <div class="stats-scroll" id="homeOverallStats">
+      <div class="stat-pill">
+        <div class="stat-pill-label">Total Pending</div>
+        <div class="stat-pill-value" id="overallPendingVal" style="color: var(--danger);">₹0</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-label">Total Earnings</div>
+        <div class="stat-pill-value" id="overallEarningsVal" style="color: var(--success);">₹0</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-label">Total Received</div>
+        <div class="stat-pill-value" id="overallReceivedVal">₹0</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-label">Total Tasks</div>
+        <div class="stat-pill-value" id="overallTasksVal">0</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-label">Active Vendors</div>
+        <div class="stat-pill-value" id="overallVendorsCount">0</div>
+      </div>
+    </div>
+
+    <!-- Vendor Selector Carousel -->
+    <div class="vendor-chips-wrap">
+      <div class="section-header">
+        <span class="section-title">Select Vendor</span>
+        <a class="section-link" onclick="openAddVendorModal()">+ Add New</a>
+      </div>
+      <div class="vendor-chips" id="homeVendorChips">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Active Vendor Banner / Hero -->
+    <div class="vendor-hero-card" id="activeVendorHero" style="display: none;">
+      <div class="hero-top">
+        <div>
+          <div class="hero-title" id="heroVendorName">Vendor Name</div>
+          <span style="font-size: 12px; color: var(--text-muted);" id="heroVendorRate">₹0 / Task</span>
+        </div>
+        <span class="hero-badge badge-pending" id="heroStatusBadge">Pending</span>
+      </div>
+
+      <div class="hero-balance-wrap">
+        <div class="hero-balance-label">Current Balance Payable</div>
+        <div class="hero-balance-amount" id="heroBalanceDue">₹0</div>
+      </div>
+
+      <div class="hero-substats">
+        <div class="hero-substat-item">
+          <div class="substat-label">Opening</div>
+          <div class="substat-val" id="heroOpeningBal">₹0</div>
+        </div>
+        <div class="hero-substat-item">
+          <div class="substat-label">Earned</div>
+          <div class="substat-val" style="color: var(--success);" id="heroTotalEarned">₹0</div>
+        </div>
+        <div class="hero-substat-item">
+          <div class="substat-label">Paid</div>
+          <div class="substat-val" style="color: var(--info);" id="heroTotalPaid">₹0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Entry Card -->
+    <div class="quick-entry-card" id="quickEntryForm" style="display: none;">
+      <div class="entry-card-title">
+        <i data-lucide="plus-circle" style="color: var(--accent); width: 20px; height: 20px;"></i>
+        Add Today's Work
+      </div>
+
+      <!-- Tasks Stepper -->
+      <div class="form-group">
+        <label class="form-label">Tasks Completed</label>
+        <div class="stepper-container">
+          <button type="button" class="stepper-btn" onclick="stepTask(-1)">−</button>
+          <input type="number" id="entryTasksCount" class="stepper-input" value="0" min="0" oninput="updateLiveCalc()" />
+          <button type="button" class="stepper-btn" onclick="stepTask(1)">+</button>
+        </div>
+      </div>
+
+      <!-- Payment Received -->
+      <div class="form-group">
+        <label class="form-label">Payment Received (₹)</label>
+        <div class="input-wrapper">
+          <span class="input-prefix">₹</span>
+          <input type="number" id="entryPaymentAmount" class="form-input" placeholder="0" min="0" value="0" oninput="updateLiveCalc()" />
+        </div>
+      </div>
+
+      <!-- Live Calculation Breakdown -->
+      <div class="calc-preview">
+        <div class="calc-col">
+          <span class="calc-label">Task Earnings</span>
+          <span class="calc-val" id="liveTaskEarnings">₹0</span>
+        </div>
+        <div class="calc-col" style="text-align: right;">
+          <span class="calc-label">Today's Net Impact</span>
+          <span class="calc-val" id="liveNetImpact" style="color: var(--text-main);">+₹0</span>
+        </div>
+      </div>
+
+      <!-- Date & Remarks (Collapsible/Optional) -->
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="entryDate" class="form-input-text" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <input type="text" id="entryNotes" class="form-input-text" placeholder="e.g. Batch #42 completed" />
+      </div>
+
+      <button type="button" class="btn-primary" onclick="submitQuickEntry()">
+        <i data-lucide="check" style="width: 20px; height: 20px;"></i>
+        Save Entry
+      </button>
+    </div>
+
+    <!-- Empty Vendors State on Home -->
+    <div class="empty-state" id="homeNoVendorsState" style="display: none;">
+      <div class="empty-icon">🤝</div>
+      <h3 style="margin-bottom: 6px;">No Vendors Yet</h3>
+      <p style="font-size: 13px; margin-bottom: 16px;">Add your first vendor to start recording tasks and tracking payments.</p>
+      <button class="btn-primary" style="max-width: 200px; margin: 0 auto; height: 46px;" onclick="openAddVendorModal()">
+        + Add Vendor
+      </button>
+    </div>
+
+  </main>
+
+  <!-- VIEW 2: VENDORS LIST -->
+  <main class="view" id="view-vendors">
+    <div class="section-header">
+      <div>
+        <h2 style="font-size: 20px; font-weight: 800;">Vendors</h2>
+        <span style="font-size: 12px; color: var(--text-muted);">Manage rates & balances</span>
+      </div>
+      <button class="icon-btn" onclick="openAddVendorModal()" style="background: var(--accent); color: #fff;">
+        <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+      </button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-input-wrap">
+      <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+      <input type="text" id="vendorSearchInput" class="search-input" placeholder="Search vendors..." oninput="renderVendorsList()" />
+    </div>
+
+    <div id="vendorsListContainer">
+      <!-- Vendors rendered here -->
+    </div>
+  </main>
+
+  <!-- VIEW 3: REPORTS & TRANSACTION HISTORY -->
+  <main class="view" id="view-reports">
+    <div class="section-header">
+      <div>
+        <h2 style="font-size: 20px; font-weight: 800;">Reports & History</h2>
+        <span style="font-size: 12px; color: var(--text-muted);">Audits, logs & exports</span>
+      </div>
+      <button class="icon-btn" onclick="exportTransactionsCSV()" title="Export CSV">
+        <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+
+    <!-- Vendor Filter Picker -->
+    <div class="form-group" style="margin-bottom: 12px;">
+      <label class="form-label">Filter by Vendor</label>
+      <select id="reportVendorSelect" class="form-input-text" onchange="renderReports()">
+        <option value="ALL">All Vendors</option>
+      </select>
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-scroll">
+      <button class="filter-chip active" data-type="ALL" onclick="setTxFilterType('ALL', this)">All</button>
+      <button class="filter-chip" data-type="TASKS" onclick="setTxFilterType('TASKS', this)">Tasks Only</button>
+      <button class="filter-chip" data-type="PAYMENTS" onclick="setTxFilterType('PAYMENTS', this)">Payments Only</button>
+    </div>
+
+    <!-- Vendor Summary Card (if specific vendor chosen) -->
+    <div class="card glass" id="reportVendorSummaryCard" style="display: none; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">VENDOR FINANCIAL STATEMENT</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+        <div>Opening: <b id="repOpening">₹0</b></div>
+        <div>Total Tasks: <b id="repTasks">0</b></div>
+        <div>Earnings: <b id="repEarnings" style="color: var(--success);">₹0</b></div>
+        <div>Total Paid: <b id="repPaid" style="color: var(--info);">₹0</b></div>
+      </div>
+      <hr style="margin: 12px 0; border: none; border-top: 1px solid var(--bg-card-border);" />
+      <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 800;">
+        <span>Balance To Be Paid:</span>
+        <span id="repBalanceDue" style="font-family: 'JetBrains Mono', monospace; color: var(--danger);">₹0</span>
+      </div>
+    </div>
+
+    <!-- Transactions List -->
+    <div style="margin-top: 16px;">
+      <div class="section-title" style="margin-bottom: 10px;">Transaction Logs</div>
+      <div id="transactionsListContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 4: SETTINGS -->
+  <main class="view" id="view-settings">
+    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">Settings</h2>
+
+    <!-- Security & PIN -->
+    <div class="card glass">
+      <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="shield" style="width: 18px; height: 18px; color: var(--accent);"></i>
+        Security & App Lock
+      </h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">4-Digit PIN Lock</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Require PIN to open app</div>
+        </div>
+        <button class="btn-primary" style="width: auto; padding: 8px 16px; height: 38px; font-size: 13px;" onclick="changeAppPin()">
+          Change PIN
+        </button>
+      </div>
+    </div>
+
+    <!-- Data Management -->
+    <div class="card glass">
+      <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="database" style="width: 18px; height: 18px; color: var(--accent);"></i>
+        Data Management (IndexedDB)
+      </h3>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-primary" style="background: var(--bg-surface); border: 1px solid var(--bg-card-border); color: var(--text-main);" onclick="exportJSONBackup()">
+          <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+          Backup Data (JSON)
+        </button>
+
+        <label class="btn-primary" style="background: var(--bg-surface); border: 1px solid var(--bg-card-border); color: var(--text-main); cursor: pointer;">
+          <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+          Restore Data from JSON
+          <input type="file" id="restoreFileInput" accept=".json" style="display: none;" onchange="importJSONBackup(event)" />
+        </label>
+
+        <button class="btn-primary" style="background: var(--bg-surface); border: 1px solid var(--bg-card-border); color: var(--text-main);" onclick="exportTransactionsCSV()">
+          <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i>
+          Export Transactions (CSV)
+        </button>
+
+        <button class="btn-primary" style="background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger);" onclick="confirmClearAllData()">
+          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+          Reset All Data
+        </button>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="card glass">
+      <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="palette" style="width: 18px; height: 18px; color: var(--accent);"></i>
+        Appearance
+      </h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">Dark / Light Mode</div>
+          <div style="font-size: 12px; color: var(--text-muted);" id="themeLabel">Currently: Dark</div>
+        </div>
+        <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" style="background: var(--accent); color: #fff;">
+          <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- App Info -->
+    <div style="text-align: center; color: var(--text-subtle); font-size: 12px; margin-top: 20px;">
+      TaskPay v1.0.0 • iPhone PWA Edition<br>
+      Optimized for Safari & Add to Home Screen
+    </div>
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-tab="home" onclick="switchTab('home')">
+      <i data-lucide="home" style="width: 22px; height: 22px;"></i>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" data-tab="vendors" onclick="switchTab('vendors')">
+      <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+      <span>Vendors</span>
+    </div>
+    <div class="nav-item" data-tab="reports" onclick="switchTab('reports')">
+      <i data-lucide="bar-chart-3" style="width: 22px; height: 22px;"></i>
+      <span>Reports</span>
+    </div>
+    <div class="nav-item" data-tab="settings" onclick="switchTab('settings')">
+      <i data-lucide="settings" style="width: 22px; height: 22px;"></i>
+      <span>Settings</span>
+    </div>
+  </nav>
+
+  <!-- MODAL: ADD / EDIT VENDOR SHEET -->
+  <div class="modal-backdrop" id="vendorModal" onclick="handleModalBackdropClick(event, 'vendorModal')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title" id="vendorModalTitle">Add Vendor</h3>
+        <button class="icon-btn" onclick="closeModal('vendorModal')">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="editVendorId" value="" />
+
+      <div class="form-group">
+        <label class="form-label">Vendor Name *</label>
+        <input type="text" id="modalVendorName" class="form-input-text" placeholder="e.g. ABC Services" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Rate Per Task (₹) *</label>
+        <div class="input-wrapper">
+          <span class="input-prefix">₹</span>
+          <input type="number" id="modalVendorRate" class="form-input" placeholder="250" min="0" />
+        </div>
+      </div>
+
+      <div class="form-group" id="modalOpeningBalGroup">
+        <label class="form-label">Opening Balance Due (₹)</label>
+        <div class="input-wrapper">
+          <span class="input-prefix">₹</span>
+          <input type="number" id="modalVendorOpening" class="form-input" placeholder="0" value="0" />
+        </div>
+        <small style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
+          Pending amount from before using this app
+        </small>
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="modalVendorPinned" style="width: 18px; height: 18px; accent-color: var(--accent);" />
+        <label for="modalVendorPinned" style="font-size: 13px; font-weight: 600;">Pin vendor to top of Home screen</label>
+      </div>
+
+      <button type="button" class="btn-primary" onclick="saveVendorFromModal()">
+        Save Vendor
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT TRANSACTION SHEET -->
+  <div class="modal-backdrop" id="editTxModal" onclick="handleModalBackdropClick(event, 'editTxModal')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h3 class="sheet-title">Edit Entry</h3>
+        <button class="icon-btn" onclick="closeModal('editTxModal')">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+      <input type="hidden" id="editTxId" value="" />
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="editTxDate" class="form-input-text" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tasks Completed</label>
+        <div class="stepper-container">
+          <button type="button" class="stepper-btn" onclick="editStepTask(-1)">−</button>
+          <input type="number" id="editTxTasks" class="stepper-input" value="0" min="0" />
+          <button type="button" class="stepper-btn" onclick="editStepTask(1)">+</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Received (₹)</label>
+        <div class="input-wrapper">
+          <span class="input-prefix">₹</span>
+          <input type="number" id="editTxPayment" class="form-input" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" id="editTxNotes" class="form-input-text" placeholder="Optional notes" />
+      </div>
+      <button type="button" class="btn-primary" onclick="saveEditedTransaction()">
+        <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+        Update Entry
+      </button>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script>
+    /* ==========================================================================
+       1. IndexedDB Persistent Storage Layer
+       ========================================================================== */
+    const DB_NAME = 'TaskPayDB';
+    const DB_VERSION = 1;
+    let db = null;
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('vendors')) {
+            const vStore = database.createObjectStore('vendors', { keyPath: 'id' });
+            vStore.createIndex('name', 'name', { unique: false });
+          }
+          if (!database.objectStoreNames.contains('transactions')) {
+            const tStore = database.createObjectStore('transactions', { keyPath: 'id' });
+            tStore.createIndex('vendorId', 'vendorId', { unique: false });
+            tStore.createIndex('date', 'date', { unique: false });
+          }
+          if (!database.objectStoreNames.contains('settings')) {
+            database.createObjectStore('settings', { keyPath: 'key' });
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    // Generic DB Helpers
+    function dbGetAll(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dbPut(storeName, item) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.put(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dbDelete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dbClear(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    /* ==========================================================================
+       2. Global State & Formatting
+       ========================================================================== */
+    let vendors = [];
+    let transactions = [];
+    let activeVendorId = null;
+    let selectedTxFilter = 'ALL';
+    let currentTheme = localStorage.getItem('taskpay_theme') || 'dark';
+
+    // Indian Number Formatting
+    function formatINR(val) {
+      const num = Number(val) || 0;
+      const isNegative = num < 0;
+      const absVal = Math.abs(num);
+      const formatted = absVal.toLocaleString('en-IN', {
+        maximumFractionDigits: 0
+      });
+      return `${isNegative ? '−' : ''}₹${formatted}`;
+    }
+
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('appToast');
+      const text = document.getElementById('toastMessage');
+      text.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2400);
+    }
+
+    /* ==========================================================================
+       3. 4-Digit PIN Security Management
+       ========================================================================== */
+    let currentPinInput = "";
+    let isSettingNewPin = false;
+    let tempFirstPin = "";
+
+    function initPinLock() {
+      const savedPin = localStorage.getItem('taskpay_pin');
+      const pinScreen = document.getElementById('pinLockScreen');
+      const title = document.getElementById('pinScreenTitle');
+      const sub = document.getElementById('pinScreenSubtitle');
+
+      if (!savedPin) {
+        // First launch setup
+        isSettingNewPin = true;
+        title.innerText = "Create 4-Digit PIN";
+        sub.innerText = "Secure your TaskPay data";
+        pinScreen.style.display = 'flex';
+      } else {
+        isSettingNewPin = false;
+        title.innerText = "Unlock TaskPay";
+        sub.innerText = "Enter your 4-digit security PIN";
+        pinScreen.style.display = 'flex';
+      }
+      resetPinInput();
+    }
+
+    function handlePinDigit(digit) {
+      if (currentPinInput.length >= 4) return;
+      currentPinInput += digit.toString();
+      updatePinDotsUI();
+
+      if (currentPinInput.length === 4) {
+        setTimeout(processPinValidation, 180);
+      }
+    }
+
+    function deletePinDigit() {
+      if (currentPinInput.length > 0) {
+        currentPinInput = currentPinInput.slice(0, -1);
+        updatePinDotsUI();
+      }
+    }
+
+    function resetPinInput() {
+      currentPinInput = "";
+      updatePinDotsUI();
+    }
+
+    function updatePinDotsUI() {
+      const dots = document.querySelectorAll('.pin-dot');
+      dots.forEach((dot, index) => {
+        if (index < currentPinInput.length) {
+          dot.classList.add('filled');
+        } else {
+          dot.classList.remove('filled');
+        }
+      });
+    }
+
+    function flashPinError() {
+      const dots = document.querySelectorAll('.pin-dot');
+      dots.forEach(d => d.classList.add('error'));
+      setTimeout(() => {
+        dots.forEach(d => d.classList.remove('error'));
+        resetPinInput();
+      }, 450);
+    }
+
+    function processPinValidation() {
+      const savedPin = localStorage.getItem('taskpay_pin');
+
+      if (isSettingNewPin) {
+        if (!tempFirstPin) {
+          tempFirstPin = currentPinInput;
+          resetPinInput();
+          document.getElementById('pinScreenTitle').innerText = "Confirm PIN";
+          document.getElementById('pinScreenSubtitle').innerText = "Re-enter the 4-digit PIN";
+        } else {
+          if (currentPinInput === tempFirstPin) {
+            localStorage.setItem('taskpay_pin', currentPinInput);
+            isSettingNewPin = false;
+            tempFirstPin = "";
+            document.getElementById('pinLockScreen').style.display = 'none';
+            showToast("PIN successfully configured!");
+          } else {
+            flashPinError();
+            showToast("PINs do not match. Try again.", false);
+            tempFirstPin = "";
+            document.getElementById('pinScreenTitle').innerText = "Create 4-Digit PIN";
+            document.getElementById('pinScreenSubtitle').innerText = "Secure your TaskPay data";
+          }
+        }
+      } else {
+        if (currentPinInput === savedPin) {
+          document.getElementById('pinLockScreen').style.display = 'none';
+          resetPinInput();
+        } else {
+          flashPinError();
+          showToast("Incorrect PIN", false);
+        }
+      }
+    }
+
+    function lockApp() {
+      resetPinInput();
+      const pinScreen = document.getElementById('pinLockScreen');
+      document.getElementById('pinScreenTitle').innerText = "Unlock TaskPay";
+      document.getElementById('pinScreenSubtitle').innerText = "Enter your 4-digit security PIN";
+      pinScreen.style.display = 'flex';
+    }
+
+    function changeAppPin() {
+      localStorage.removeItem('taskpay_pin');
+      tempFirstPin = "";
+      initPinLock();
+    }
+
+    /* ==========================================================================
+       4. Core Calculation Logic
+       ========================================================================== */
+    function getVendorSummary(vendorId) {
+      const vendor = vendors.find(v => v.id === vendorId);
+      if (!vendor) return null;
+
+      const vTxs = transactions.filter(t => t.vendorId === vendorId);
+      let totalTasks = 0;
+      let totalEarned = 0;
+      let totalPaid = 0;
+
+      vTxs.forEach(t => {
+        totalTasks += Number(t.tasksCompleted) || 0;
+        totalEarned += Number(t.taskAmount) || 0;
+        totalPaid += Number(t.paymentReceived) || 0;
+      });
+
+      const openingBal = Number(vendor.openingBalance) || 0;
+      const totalAmountDue = openingBal + totalEarned;
+      const currentBalance = totalAmountDue - totalPaid;
+
+      let status = 'paid';
+      if (currentBalance > 0) status = 'pending';
+      else if (currentBalance < 0) status = 'advance';
+
+      return {
+        vendor,
+        openingBal,
+        totalTasks,
+        ratePerTask: Number(vendor.ratePerTask) || 0,
+        totalEarned,
+        totalPaid,
+        totalAmountDue,
+        currentBalance,
+        status
+      };
+    }
+
+    function calculateOverallSummary() {
+      let totalTasks = 0;
+      let totalEarnings = 0;
+      let totalReceived = 0;
+      let totalPending = 0;
+
+      vendors.forEach(v => {
+        const sum = getVendorSummary(v.id);
+        if (sum) {
+          totalTasks += sum.totalTasks;
+          totalEarnings += sum.totalEarned;
+          totalReceived += sum.totalPaid;
+          totalPending += sum.currentBalance;
+        }
+      });
+
+      return {
+        totalVendors: vendors.length,
+        totalTasks,
+        totalEarnings,
+        totalReceived,
+        totalPending
+      };
+    }
+
+    /* ==========================================================================
+       5. UI RENDERERS
+       ========================================================================== */
+    function renderApp() {
+      renderOverallDashboard();
+      renderHomeVendorChips();
+      renderActiveVendorDetails();
+      renderVendorsList();
+      renderReports();
+      lucide.createIcons();
+    }
+
+    function renderOverallDashboard() {
+      const summary = calculateOverallSummary();
+      document.getElementById('overallPendingVal').innerText = formatINR(summary.totalPending);
+      document.getElementById('overallEarningsVal').innerText = formatINR(summary.totalEarnings);
+      document.getElementById('overallReceivedVal').innerText = formatINR(summary.totalReceived);
+      document.getElementById('overallTasksVal').innerText = summary.totalTasks.toLocaleString('en-IN');
+      document.getElementById('overallVendorsCount').innerText = summary.totalVendors;
+    }
+
+    function renderHomeVendorChips() {
+      const container = document.getElementById('homeVendorChips');
+      const emptyState = document.getElementById('homeNoVendorsState');
+      const quickForm = document.getElementById('quickEntryForm');
+      const hero = document.getElementById('activeVendorHero');
+
+      if (!vendors || vendors.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        quickForm.style.display = 'none';
+        hero.style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      quickForm.style.display = 'block';
+      hero.style.display = 'block';
+
+      // Sort pinned vendors first, then alphabetical
+      const sorted = [...vendors].sort((a, b) => {
+        if (b.isPinned && !a.isPinned) return 1;
+        if (a.isPinned && !b.isPinned) return -1;
+        return a.name.localeCompare(b.name);
+      });
+
+      if (!activeVendorId || !vendors.find(v => v.id === activeVendorId)) {
+        activeVendorId = sorted[0].id;
+      }
+
+      container.innerHTML = sorted.map(v => {
+        const sum = getVendorSummary(v.id);
+        const isActive = v.id === activeVendorId;
+        const statusColor = sum.currentBalance > 0 ? 'var(--danger)' : (sum.currentBalance < 0 ? 'var(--info)' : 'var(--success)');
+
+        return `
+          <div class="vendor-chip ${isActive ? 'active' : ''}" onclick="selectActiveVendor('${v.id}')">
+            <div class="vendor-chip-top">
+              <span class="chip-name">${v.name}</span>
+              ${v.isPinned ? '<span class="chip-pin">★</span>' : ''}
+            </div>
+            <div class="chip-due" style="color: ${statusColor};">
+              ${formatINR(sum.currentBalance)}
+            </div>
+            <div class="chip-rate">₹${v.ratePerTask}/task</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectActiveVendor(id) {
+      activeVendorId = id;
+      renderHomeVendorChips();
+      renderActiveVendorDetails();
+      updateLiveCalc();
+    }
+
+    function renderActiveVendorDetails() {
+      if (!activeVendorId) return;
+      const sum = getVendorSummary(activeVendorId);
+      if (!sum) return;
+
+      document.getElementById('heroVendorName').innerText = sum.vendor.name;
+      document.getElementById('heroVendorRate').innerText = `₹${sum.ratePerTask} / Task`;
+      document.getElementById('heroBalanceDue').innerText = formatINR(sum.currentBalance);
+      document.getElementById('heroOpeningBal').innerText = formatINR(sum.openingBal);
+      document.getElementById('heroTotalEarned').innerText = formatINR(sum.totalEarned);
+      document.getElementById('heroTotalPaid').innerText = formatINR(sum.totalPaid);
+
+      const badge = document.getElementById('heroStatusBadge');
+      badge.className = `hero-badge badge-${sum.status}`;
+      badge.innerText = sum.status.toUpperCase();
+    }
+
+    function stepTask(delta) {
+      const input = document.getElementById('entryTasksCount');
+      let val = Math.max(0, (parseInt(input.value) || 0) + delta);
+      input.value = val;
+      updateLiveCalc();
+    }
+
+    function updateLiveCalc() {
+      const sum = getVendorSummary(activeVendorId);
+      const rate = sum ? sum.ratePerTask : 0;
+      const tasks = parseInt(document.getElementById('entryTasksCount').value) || 0;
+      const payment = parseFloat(document.getElementById('entryPaymentAmount').value) || 0;
+
+      const earnings = tasks * rate;
+      const net = earnings - payment;
+
+      document.getElementById('liveTaskEarnings').innerText = formatINR(earnings);
+      
+      const netEl = document.getElementById('liveNetImpact');
+      if (net > 0) {
+        netEl.innerText = `+${formatINR(net)}`;
+        netEl.style.color = 'var(--success)';
+      } else if (net < 0) {
+        netEl.innerText = `${formatINR(net)}`;
+        netEl.style.color = 'var(--danger)';
+      } else {
+        netEl.innerText = `₹0`;
+        netEl.style.color = 'var(--text-main)';
+      }
+    }
+
+    /* Quick Entry Submission */
+    async function submitQuickEntry() {
+      if (!activeVendorId) {
+        showToast('Please select a vendor first', false);
+        return;
+      }
+      const vendor = vendors.find(v => v.id === activeVendorId);
+      const tasks = parseInt(document.getElementById('entryTasksCount').value) || 0;
+      const payment = parseFloat(document.getElementById('entryPaymentAmount').value) || 0;
+      const dateVal = document.getElementById('entryDate').value || new Date().toISOString().split('T')[0];
+      const notes = document.getElementById('entryNotes').value.trim();
+
+      if (tasks === 0 && payment === 0) {
+        showToast('Please enter completed tasks or payment amount', false);
+        return;
+      }
+
+      const taskAmount = tasks * (Number(vendor.ratePerTask) || 0);
+
+      const newTx = {
+        id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        vendorId: activeVendorId,
+        date: dateVal,
+        tasksCompleted: tasks,
+        taskAmount: taskAmount,
+        paymentReceived: payment,
+        notes: notes,
+        createdAt: new Date().toISOString()
+      };
+
+      await dbPut('transactions', newTx);
+      transactions.unshift(newTx);
+
+      // Reset Quick form
+      document.getElementById('entryTasksCount').value = '0';
+      document.getElementById('entryPaymentAmount').value = '0';
+      document.getElementById('entryNotes').value = '';
+      updateLiveCalc();
+
+      renderApp();
+      showToast('Entry successfully recorded!');
+    }
+
+    /* Vendors View Rendering */
+    function renderVendorsList() {
+      const container = document.getElementById('vendorsListContainer');
+      const search = (document.getElementById('vendorSearchInput')?.value || '').toLowerCase();
+
+      let filtered = vendors.filter(v => v.name.toLowerCase().includes(search));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <p>No vendors found</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(v => {
+        const sum = getVendorSummary(v.id);
+        const dueColor = sum.currentBalance > 0 ? 'var(--danger)' : (sum.currentBalance < 0 ? 'var(--info)' : 'var(--success)');
+        return `
+          <div class="vendor-item-card" onclick="openVendorDetails('${v.id}')">
+            <div class="vendor-meta">
+              <div class="vendor-name">
+                ${v.name}
+                ${v.isPinned ? '<span style="color: var(--warning); font-size: 13px;">★</span>' : ''}
+              </div>
+              <div class="vendor-details-str">Rate: ₹${v.ratePerTask} • Tasks: ${sum.totalTasks}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+              <div class="vendor-due-str" style="color: ${dueColor};">${formatINR(sum.currentBalance)}</div>
+              <span class="hero-badge badge-${sum.status}" style="font-size: 10px; padding: 2px 6px;">${sum.status.toUpperCase()}</span>
+              <div style="display: flex; gap: 6px; margin-top: 4px;">
+                <button onclick="event.stopPropagation(); openVendorDetails('${v.id}')" style="background: var(--bg-surface-elevated); border: 1px solid var(--bg-card-border); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 600;">Edit</button>
+                <button onclick="deleteVendor('${v.id}', event)" style="background: var(--danger-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--danger); cursor: pointer; font-weight: 600;">Delete</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* Reports & Transaction History */
+    function renderReports() {
+      const select = document.getElementById('reportVendorSelect');
+      const currentSelected = select.value || 'ALL';
+
+      // Rebuild options
+      select.innerHTML = `<option value="ALL">All Vendors</option>` +
+        vendors.map(v => `<option value="${v.id}" ${v.id === currentSelected ? 'selected' : ''}>${v.name}</option>`).join('');
+
+      const vendorId = select.value;
+      const summaryCard = document.getElementById('reportVendorSummaryCard');
+
+      if (vendorId !== 'ALL') {
+        const sum = getVendorSummary(vendorId);
+        if (sum) {
+          summaryCard.style.display = 'block';
+          document.getElementById('repOpening').innerText = formatINR(sum.openingBal);
+          document.getElementById('repTasks').innerText = sum.totalTasks;
+          document.getElementById('repEarnings').innerText = formatINR(sum.totalEarned);
+          document.getElementById('repPaid').innerText = formatINR(sum.totalPaid);
+          document.getElementById('repBalanceDue').innerText = formatINR(sum.currentBalance);
+        }
+      } else {
+        summaryCard.style.display = 'none';
+      }
+
+      // Filter transactions
+      let filtered = [...transactions];
+      if (vendorId !== 'ALL') {
+        filtered = filtered.filter(t => t.vendorId === vendorId);
+      }
+
+      if (selectedTxFilter === 'TASKS') {
+        filtered = filtered.filter(t => t.tasksCompleted > 0);
+      } else if (selectedTxFilter === 'PAYMENTS') {
+        filtered = filtered.filter(t => t.paymentReceived > 0);
+      }
+
+      const txContainer = document.getElementById('transactionsListContainer');
+
+      if (filtered.length === 0) {
+        txContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>No transactions found</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort by date desc
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      txContainer.innerHTML = filtered.map(tx => {
+        const v = vendors.find(item => item.id === tx.vendorId);
+        const vName = v ? v.name : 'Unknown Vendor';
+        const formattedDate = new Date(tx.date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+
+        return `
+          <div class="tx-item">
+            <div class="tx-header">
+              <div>
+                <span style="font-weight: 700; font-size: 13px;">${vName}</span>
+                <span class="tx-date">• ${formattedDate}</span>
+              </div>
+              <div class="tx-actions">
+                <button class="tx-icon-btn" style="color: var(--accent);" onclick="openEditTransaction('${tx.id}')" title="Edit">
+                  <i data-lucide="pencil" style="width: 15px; height: 15px;"></i>
+                </button>
+                <button class="tx-icon-btn" style="color: var(--danger);" onclick="deleteTransaction('${tx.id}')" title="Delete">
+                  <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                </button>
+              </div>
+            </div>
+            <div class="tx-body">
+              <div class="tx-badge-group">
+                ${tx.tasksCompleted > 0 ? `
+                  <span class="tx-pill earned">
+                    +${tx.tasksCompleted} Tasks (${formatINR(tx.taskAmount)})
+                  </span>
+                ` : ''}
+                ${tx.paymentReceived > 0 ? `
+                  <span class="tx-pill paid">
+                    − Received ${formatINR(tx.paymentReceived)}
+                  </span>
+                ` : ''}
+                ${tx.notes ? `<span style="font-size: 11px; color: var(--text-subtle);">${tx.notes}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setTxFilterType(type, btn) {
+      selectedTxFilter = type;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      renderReports();
+    }
+
+    async function deleteTransaction(id) {
+      if (!confirm('Are you sure you want to delete this transaction record?')) return;
+      await dbDelete('transactions', id);
+      transactions = transactions.filter(t => t.id !== id);
+      renderApp();
+      showToast('Transaction removed');
+    }
+
+    /* ==========================================================================
+       6. Modals & Vendor Edit / Add
+       ========================================================================== */
+    function openAddVendorModal() {
+      document.getElementById('editVendorId').value = '';
+      document.getElementById('vendorModalTitle').innerText = 'Add New Vendor';
+      document.getElementById('modalVendorName').value = '';
+      document.getElementById('modalVendorRate').value = '';
+      document.getElementById('modalVendorOpening').value = '0';
+      document.getElementById('modalVendorPinned').checked = false;
+      document.getElementById('modalOpeningBalGroup').style.display = 'block';
+
+      document.getElementById('vendorModal').classList.add('open');
+    }
+
+    function openVendorDetails(id) {
+      const v = vendors.find(item => item.id === id);
+      if (!v) return;
+
+      document.getElementById('editVendorId').value = v.id;
+      document.getElementById('vendorModalTitle').innerText = 'Edit Vendor';
+      document.getElementById('modalVendorName').value = v.name;
+      document.getElementById('modalVendorRate').value = v.ratePerTask;
+      document.getElementById('modalVendorOpening').value = v.openingBalance || 0;
+      document.getElementById('modalVendorPinned').checked = !!v.isPinned;
+
+      document.getElementById('vendorModal').classList.add('open');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('open');
+    }
+
+    function handleModalBackdropClick(e, modalId) {
+      if (e.target.id === modalId) {
+        closeModal(modalId);
+      }
+    }
+
+    async function saveVendorFromModal() {
+      const editId = document.getElementById('editVendorId').value;
+      const name = document.getElementById('modalVendorName').value.trim();
+      const rate = parseFloat(document.getElementById('modalVendorRate').value);
+      const opening = parseFloat(document.getElementById('modalVendorOpening').value) || 0;
+      const isPinned = document.getElementById('modalVendorPinned').checked;
+
+      if (!name) {
+        showToast('Vendor name is required', false);
+        return;
+      }
+      if (isNaN(rate) || rate < 0) {
+        showToast('Valid task rate is required', false);
+        return;
+      }
+
+      if (editId) {
+        // Edit existing
+        const existing = vendors.find(v => v.id === editId);
+        if (existing) {
+          existing.name = name;
+          existing.ratePerTask = rate;
+          existing.openingBalance = opening;
+          existing.isPinned = isPinned;
+          existing.updatedAt = new Date().toISOString();
+          await dbPut('vendors', existing);
+        }
+      } else {
+        // Create new
+        const newVendor = {
+          id: 'vnd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          name: name,
+          ratePerTask: rate,
+          openingBalance: opening,
+          isPinned: isPinned,
+          createdAt: new Date().toISOString()
+        };
+        await dbPut('vendors', newVendor);
+        vendors.push(newVendor);
+        activeVendorId = newVendor.id;
+      }
+
+      closeModal('vendorModal');
+      renderApp();
+      showToast('Vendor saved successfully!');
+    }
+
+    /* ==========================================================================
+       7. Backup, Restore & CSV Export
+       ========================================================================== */
+    function exportJSONBackup() {
+      const data = {
+        app: 'TaskPay',
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        vendors,
+        transactions
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `TaskPay_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup file downloaded');
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.vendors || !parsed.transactions) {
+            throw new Error('Invalid format');
+          }
+          if (!confirm('This will replace your current data with the backup. Continue?')) return;
+
+          await dbClear('vendors');
+          await dbClear('transactions');
+
+          for (const v of parsed.vendors) await dbPut('vendors', v);
+          for (const t of parsed.transactions) await dbPut('transactions', t);
+
+          vendors = parsed.vendors;
+          transactions = parsed.transactions;
+          activeVendorId = vendors[0]?.id || null;
+
+          renderApp();
+          showToast('Data restored successfully!');
+        } catch (err) {
+          showToast('Failed to import: invalid backup file', false);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportTransactionsCSV() {
+      if (transactions.length === 0) {
+        showToast('No transaction data to export', false);
+        return;
+      }
+
+      let csv = 'Transaction ID,Date,Vendor,Tasks Completed,Task Rate,Task Earnings,Payment Received,Notes\n';
+      transactions.forEach(t => {
+        const v = vendors.find(item => item.id === t.vendorId);
+        const vName = v ? `"${v.name}"` : '"Unknown"';
+        const rate = v ? v.ratePerTask : 0;
+        csv += `"${t.id}","${t.date}",${vName},${t.tasksCompleted},${rate},${t.taskAmount},${t.paymentReceived},"${t.notes || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `TaskPay_Transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV Exported');
+    }
+
+    async function confirmClearAllData() {
+      if (confirm('DANGER: This will delete ALL vendors and transaction history permanently! Proceed?')) {
+        await dbClear('vendors');
+        await dbClear('transactions');
+        vendors = [];
+        transactions = [];
+        activeVendorId = null;
+        renderApp();
+        showToast('All application data cleared');
+      }
+    }
+
+    /* ==========================================================================
+       8. Appearance & Navigation Controls
+       ========================================================================== */
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('taskpay_theme', currentTheme);
+      const btn = document.getElementById('themeToggleBtn');
+      const lbl = document.getElementById('themeLabel');
+      if (btn) btn.innerHTML = currentTheme === 'dark'
+        ? '<i data-lucide="moon" style="width:18px;height:18px;"></i>'
+        : '<i data-lucide="sun" style="width:18px;height:18px;"></i>';
+      if (lbl) lbl.innerText = `Currently: ${currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}`;
+      lucide.createIcons();
+      showToast(`Switched to ${currentTheme} mode`);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const targetView = document.getElementById(`view-${tabId}`);
+      const targetNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+
+      if (targetView) targetView.classList.add('active');
+      if (targetNav) targetNav.classList.add('active');
+
+      if (tabId === 'home') renderApp();
+      if (tabId === 'vendors') renderVendorsList();
+      if (tabId === 'reports') renderReports();
+      lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       9. Initialization & Service Worker
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Set Theme
+      document.body.setAttribute('data-theme', currentTheme);
+
+      // Set Date Display
+      const today = new Date();
+      document.getElementById('currentDateStr').innerText = today.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+      document.getElementById('entryDate').value = today.toISOString().split('T')[0];
+
+      // Init Database & Load Data
+      await openDatabase();
+      vendors = await dbGetAll('vendors');
+      transactions = await dbGetAll('transactions');
+
+      // Initialize Pin Lock
+      initPinLock();
+
+      // Render initial state
+      renderApp();
+
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('SW registration skipped:', err);
+        });
+      }
+    });
+
+    /* ==========================================================================
+       10. Vendor Deletion
+       ========================================================================== */
+    async function deleteVendor(vendorId, event) {
+      if (event) event.stopPropagation();
+      const v = vendors.find(item => item.id === vendorId);
+      if (!v) return;
+      const txCount = transactions.filter(t => t.vendorId === vendorId).length;
+      const msg = txCount > 0
+        ? `Delete "${v.name}" and ALL ${txCount} transaction records? This cannot be undone.`
+        : `Delete vendor "${v.name}"?`;
+      if (!confirm(msg)) return;
+      await dbDelete('vendors', vendorId);
+      await Promise.all(
+        transactions.filter(t => t.vendorId === vendorId).map(t => dbDelete('transactions', t.id))
+      );
+      vendors = vendors.filter(item => item.id !== vendorId);
+      transactions = transactions.filter(t => t.vendorId !== vendorId);
+      if (activeVendorId === vendorId) activeVendorId = vendors[0]?.id || null;
+      renderApp();
+      showToast(`"${v.name}" deleted`);
+    }
+
+    /* ==========================================================================
+       11. Edit Transaction
+       ========================================================================== */
+    function openEditTransaction(txId) {
+      const tx = transactions.find(t => t.id === txId);
+      if (!tx) return;
+      document.getElementById('editTxId').value = tx.id;
+      document.getElementById('editTxDate').value = tx.date;
+      document.getElementById('editTxTasks').value = tx.tasksCompleted;
+      document.getElementById('editTxPayment').value = tx.paymentReceived;
+      document.getElementById('editTxNotes').value = tx.notes || '';
+      document.getElementById('editTxModal').classList.add('open');
+      lucide.createIcons();
+    }
+
+    function editStepTask(delta) {
+      const input = document.getElementById('editTxTasks');
+      input.value = Math.max(0, (parseInt(input.value) || 0) + delta);
+    }
+
+    async function saveEditedTransaction() {
+      const txId = document.getElementById('editTxId').value;
+      const tx = transactions.find(t => t.id === txId);
+      if (!tx) return;
+
+      const vendor = vendors.find(v => v.id === tx.vendorId);
+      const tasks = parseInt(document.getElementById('editTxTasks').value) || 0;
+      const payment = parseFloat(document.getElementById('editTxPayment').value) || 0;
+      const date = document.getElementById('editTxDate').value;
+      const notes = document.getElementById('editTxNotes').value.trim();
+
+      tx.date = date;
+      tx.tasksCompleted = tasks;
+      tx.taskAmount = tasks * (Number(vendor?.ratePerTask) || 0);
+      tx.paymentReceived = payment;
+      tx.notes = notes;
+      tx.updatedAt = new Date().toISOString();
+
+      await dbPut('transactions', tx);
+      const idx = transactions.findIndex(t => t.id === txId);
+      if (idx !== -1) transactions[idx] = tx;
+
+      closeModal('editTxModal');
+      renderApp();
+      showToast('Entry updated successfully!');
+    }
+  </script>
+</body>
+</html>

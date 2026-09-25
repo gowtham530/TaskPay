@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Generated icons source (large file)
+icons/icon-source.jpg
+
+# Helper files not needed for deployment
+generate-icons.js
+icon-generator.html
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
