@@ -1,7 +1,8 @@
-const CACHE_NAME = 'taskpay-v1.2';
+const CACHE_NAME = 'taskpay-v1.3';
 const STATIC_ASSETS = [
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 // Install: cache static assets
@@ -41,7 +42,7 @@ self.addEventListener('fetch', event => {
         return response;
       }).catch(() => {
         if (event.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('./index.html') || caches.match('./');
         }
       });
     })
